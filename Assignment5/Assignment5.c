@@ -28,7 +28,13 @@ struct processblock {
 
 typedef struct processblock PCB;
 typedef PCB* ptrPCB;
-
+void displayQueueArr(ptrPCB *headRef, int aTime);
+void displayQueueTime(ptrPCB *headRef, int pTime);
+void displayQueue(ptrPCB *headRef);
+void displayBlock(ptrPCB *block);
+ptrPCB GetAndRemoveFront(ptrPCB *headRef);
+ptrPCB readBlock(FILE *fptr);
+void AddToEnd(ptrPCB *headRef, ptrPCB tooAddPtr);
 
 int main(void){
 
@@ -49,7 +55,6 @@ int main(void){
         return 1; // Exit with an error code
     }
     else{
-        printf("============= process control blocks =========\n");
 
 
         // Read the file line by line until the of the line
@@ -147,7 +152,28 @@ int main(void){
 
             }
             else if(user_choice==3){
-                
+                int priority = 0;
+                printf("What Priority process would you like to see? (0-3): ");
+                scanf("%d", priority);
+                switch (priority)
+                {
+                case 0:
+                    printf("================= Real Time =================");
+                    displayQueue(RTprocesses);
+                    break;
+                case 1:
+                    displayQueue(P1processes);
+                    printf("================= Priority 1 =================");
+                    break;
+                case 2: 
+                    printf("================= Priority 2 =================");
+                    displayQueue(P2processes);
+                    break;
+                case 3: 
+                    printf("================= Priority 3 =================");
+                    displayQueue(P3processes);
+                    break;
+            }
             }
             else if(user_choice==4){
                 int Aprocess = 0;
@@ -195,7 +221,7 @@ int main(void){
         }
     }
     
-    return 1;
+    return 0;
 }
 
 
