@@ -150,7 +150,10 @@ int main(void){
             printf("> 7 EXIT \n");
             printf("Your choice: ");
             scanf("%d", &user_choice);
+
+            puts("");
             if(user_choice==1){
+                printf("Running: \n");
                 if(Rprocess!=NULL){
                     AddToEnd(&Eprocesses,Rprocess);
                     if (RTprocesses != NULL) {
@@ -179,6 +182,7 @@ int main(void){
 
             }
             else if(user_choice==2){
+                printf("Running: \n");
                 if(Rprocess!=NULL){
                     if(Rprocess->realTime==1){
                         AddToEnd(&RTprocesses, Rprocess);
@@ -192,7 +196,7 @@ int main(void){
                     else if(Rprocess->priority==3){
                         AddToEnd(&P3processes, Rprocess);
                     }
-                                        if (RTprocesses != NULL) {
+                    if (RTprocesses != NULL) {
                         Rprocess = GetAndRemoveFront(&RTprocesses);
                     } 
                     else if (P1processes != NULL) {
@@ -281,6 +285,7 @@ int main(void){
                 scanf(" %c", &ch);
                 exit(0);
             }
+            puts("");
         }
         return 0;
     }
@@ -356,9 +361,9 @@ ptrPCB GetAndRemoveFront(ptrPCB *headRef){
 
 void displayBlock(ptrPCB block){
     ptrPCB process = block;
-    printf("ID: %d Usr: %d Arr: %d Pri: %d Remain: %d Mem: %d Cput: %d RT: %d\n",
+    printf("Id %-4d Usr: %-3d Arr: %-2d Pri: %-2d Remain: %-3d Mem: %-5d CPU: %-3d\n",
         process->processId,process->userId,process->arrivalTime,process->priority, 
-        process->expectedTimeRemaining,process->expectedMemoryNeed, process->expectedPctCPU,process->realTime);
+        process->expectedTimeRemaining,process->expectedMemoryNeed, process->expectedPctCPU);
     return;
 
 }
@@ -380,10 +385,11 @@ void displayQueueTime(ptrPCB headRef, int pTime){
     int count = 0;
     ptrPCB curr = headRef;
     while(curr!=NULL){
-        if(curr->arrivalTime ==pTime){
+        if(curr->expectedTimeRemaining >pTime){
             count++;
             displayBlock(curr);
         }
+        curr = curr ->nextPtr;
     }
     printf("Number found: %d \n", count);
 }
@@ -403,3 +409,9 @@ void displayQueueArr(ptrPCB headRef, int aTime) {
 }
 
 //shift+alt+A
+
+//possible functions I am trying to implement:
+/*
+1. pickRunning-process- I do it three times while as well just make it into function and call it
+*/
+//Just Add the comments and done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
