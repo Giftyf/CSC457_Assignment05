@@ -28,13 +28,17 @@ struct processblock {
 
 typedef struct processblock PCB;
 typedef PCB* ptrPCB;
-void displayQueueArr(ptrPCB *headRef, int aTime);
-void displayQueueTime(ptrPCB *headRef, int pTime);
-void displayQueue(ptrPCB *headRef);
-void displayBlock(ptrPCB *block);
-ptrPCB GetAndRemoveFront(ptrPCB *headRef);
-ptrPCB readBlock(FILE *fptr);
+
+//function header
+void displayQueueArr(ptrPCB headRef, int aTime);
+void displayQueueTime(ptrPCB headRef, int pTime);
+void displayQueue(ptrPCB headRef);
+void displayBlock(ptrPCB block);
 void AddToEnd(ptrPCB *headRef, ptrPCB tooAddPtr);
+ptrPCB GetAndRemoveFront(ptrPCB *headRef);
+ptrPCB readBlock(int processId, int userId, int arrivalTime, int priority,
+                 int expectedTimeRemaining, int expectedMemoryNeed, int expectedPctCPU, int realTime);
+
 
 int main(void){
 
@@ -47,38 +51,38 @@ int main(void){
     ptrPCB SBprocesses= NULL;
     FILE *cfPtr = NULL;
     
-
-
     // Try to open the file "processes.txt". If it can't be opened, print an error message and exit.
     if((cfPtr = fopen("processes.txt", "r")) == NULL) {
         puts("File could not be opened");
         return 1; // Exit with an error code
     }
     else{
-
-
         // Read the file line by line until the of the line
         while (!feof(cfPtr)) {
+            int processId,userId,arrivalTime, priority, expectedTimeRemaining, expectedMemoryNeed, expectedPctCPU,realTime;
             //check if the line has 8 inputs
-            if(fscanf(cfPtr, "%d%d%d%d%d%d%d%d")==8){
-                fseek(cfPtr, -sizeof(int)*8, SEEK_CUR);
-                ptrPCB temp = readBlock(cfPtr);
-                PCB process1=*temp;
-                if(process1.arrivalTime==0){
-                    if(process1.realTime==1){
-                        AddToEnd(RTprocesses,&process1);
+            if(fscanf(cfPtr, "%d%d%d%d%d%d%d%d",  &processId, &userId, &arrivalTime, &priority,
+               &expectedTimeRemaining, &expectedMemoryNeed, &expectedPctCPU, &realTime)==8){
+                //fseek(cfPtr, -sizeof(int)*8, SEEK_CUR);
+                ptrPCB temp = readBlock(processId, userId, arrivalTime, priority, expectedTimeRemaining, expectedMemoryNeed, expectedPctCPU, realTime);
+                if(temp->arrivalTime==0){
+                    if(temp->realTime==1){
+                        AddToEnd(&RTprocesses,temp);
                     }
-                    else if(process1.priority==1){
-                        AddToEnd(P1processes, &process1);
+                    else if(temp->priority==1){
+                        AddToEnd(&P1processes, temp);
                     }
-                    else if(process1.priority==2){
-                        AddToEnd(P2processes,&process1);
+                    else if(temp->priority==2){
+                        AddToEnd(&P2processes,temp);
                     }
-                    else if(process1.priority==3){
-                        AddToEnd(P3processes, &process1);
+                    else if(temp->priority==3){
+                        AddToEnd(&P3processes, temp);
                     }
                 }
-                else AddtoEnd(SBprocesses, &process1);
+                else 
+                {
+                    AddToEnd(&SBprocesses, temp);
+                }
             }
             else{
                 break;
@@ -91,46 +95,47 @@ int main(void){
         printf("================= Initial Simplified Beginnings of Scheduling Program =================\n");
         printf("                  On Hold Waiting for Arrival\n");
         displayQueue(SBprocesses);
-        printf("================= Real Time =================");
+        printf("================= Real Time =================\n");
         displayQueue(RTprocesses);
-        printf("================= Priority 1 =================");
+        printf("================= Priority 1 =================\n");
         displayQueue(P1processes);
-        printf("================= Priority 2 =================");
+        printf("================= Priority 2 =================\n");
         displayQueue(P2processes);
-        printf("================= Priority 3 =================");
+        printf("================= Priority 3 =================\n");
         displayQueue(P3processes);
 
-        ptrPCB Rprocess= NULL;
-        if(RTprocesses != NULL){
-            Rprocess = GetAndRemoveFront(RTprocesses);
-            printf("Running: \n");
-            displayBlock(Rprocess);
-        }
-        else if(P1processes != NULL){
-            Rprocess = GetAndRemoveFront(P1processes);
-            printf("Running: \n");
-            displayBlock(Rprocess);
-        }
-        else if(P2processes != NULL){
-            Rprocess = GetAndRemoveFront(P2processes);
-            printf("Running: \n");
-            displayBlock(Rprocess);
-        }
-        else if(P3processes != NULL){
-            Rprocess = GetAndRemoveFront(P3processes);
-            printf("Running: \n");
-            displayBlock(Rprocess);
-        }      
-        else{
-            Rprocess = NULL;
-            printf("Running: \n");
-            printf("No process to run.");
-        }  
+        puts("");
+
         //This code enable us as continue executing the code after the user inserts a character
         char ch;
         printf("Enter any key to continue: ");
         scanf(" %c", &ch);
         puts("");
+
+        ptrPCB Rprocess = NULL;
+        printf("Running: \n");
+
+        if (RTprocesses != NULL) {
+            Rprocess = GetAndRemoveFront(&RTprocesses);
+        } 
+        else if (P1processes != NULL) {
+            Rprocess = GetAndRemoveFront(&P1processes);
+        } 
+        else if (P2processes != NULL) {
+            Rprocess = GetAndRemoveFront(&P2processes);
+        } 
+        else if (P3processes != NULL) {
+            Rprocess = GetAndRemoveFront(&P3processes);
+        }
+
+        if (Rprocess != NULL) {
+            displayBlock(Rprocess);
+        } else {
+            printf("No process to run.\n");
+        } 
+
+        puts("");
+
 
         int user_choice =0;
 
@@ -146,69 +151,127 @@ int main(void){
             printf("Your choice: ");
             scanf("%d", &user_choice);
             if(user_choice==1){
+                if(Rprocess!=NULL){
+                    AddToEnd(&Eprocesses,Rprocess);
+                    if (RTprocesses != NULL) {
+                        Rprocess = GetAndRemoveFront(&RTprocesses);
+                    } 
+                    else if (P1processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P1processes);
+                    } 
+                    else if (P2processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P2processes);
+                    } 
+                    else if (P3processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P3processes);
+                    }
+
+                    if (Rprocess != NULL) {
+                        displayBlock(Rprocess);
+                    } else {
+                        printf("No process to run.\n");
+                    } 
+
+                }
+                else{
+                    puts("No Running process.");
+                }
 
             }
             else if(user_choice==2){
+                if(Rprocess!=NULL){
+                    if(Rprocess->realTime==1){
+                        AddToEnd(&RTprocesses, Rprocess);
+                    }
+                    else if(Rprocess->priority==1){
+                        AddToEnd(&P1processes, Rprocess);
+                    }
+                    else if(Rprocess->priority==2){
+                        AddToEnd(&P2processes, Rprocess);
+                    }
+                    else if(Rprocess->priority==3){
+                        AddToEnd(&P3processes, Rprocess);
+                    }
+                                        if (RTprocesses != NULL) {
+                        Rprocess = GetAndRemoveFront(&RTprocesses);
+                    } 
+                    else if (P1processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P1processes);
+                    } 
+                    else if (P2processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P2processes);
+                    } 
+                    else if (P3processes != NULL) {
+                        Rprocess = GetAndRemoveFront(&P3processes);
+                    }
 
+                    if (Rprocess != NULL) {
+                        displayBlock(Rprocess);
+                    } 
+                    else {
+                        printf("No process to run.\n");
+                    } 
+
+                }
+                else{
+                    puts("No Running process.");
+                }
             }
             else if(user_choice==3){
                 int priority = 0;
                 printf("What Priority process would you like to see? (0-3): ");
-                scanf("%d", priority);
+                scanf("%d", &priority);
                 switch (priority)
                 {
                 case 0:
-                    printf("================= Real Time =================");
+                    printf("================= Real Time =================\n");
                     displayQueue(RTprocesses);
                     break;
                 case 1:
                     displayQueue(P1processes);
-                    printf("================= Priority 1 =================");
+                    printf("================= Priority 1 =================\n");
                     break;
                 case 2: 
-                    printf("================= Priority 2 =================");
+                    printf("================= Priority 2 =================\n");
                     displayQueue(P2processes);
                     break;
                 case 3: 
-                    printf("================= Priority 3 =================");
+                    printf("================= Priority 3 =================\n");
                     displayQueue(P3processes);
                     break;
             }
             }
             else if(user_choice==4){
                 int Aprocess = 0;
-                Printf("What simulated arrival time would you like to see processes from? (currently none higher than 100): ");
-                scanf("%d", Aprocess);
-                printf("================= standby processes with arrival time = %d =================", Aprocess);
+                printf("What simulated arrival time would you like to see processes from? (currently none higher than 100): ");
+                scanf("%d", &Aprocess);
+                printf("================= standby processes with arrival time = %d =================\n", Aprocess);
                 printf("---------------------- process control blocks ----------------------\n");
-                displayQueueArr(RTprocesses,Aprocess);
+                displayQueueArr(SBprocesses,Aprocess);
             }
             else if(user_choice==5){
                 int Tprocess = 0;
-                Printf("What time rmaining would you like to see processes longer than? (currently low numbers): ");
-                scanf("%d", Tprocess);
-                printf("================= Real Time =================");
+                printf("What time remaining would you like to see processes longer than? (currently low numbers): ");
+                scanf("%d", &Tprocess);
+                printf("================= Real Time =================\n");
                 displayQueueTime(RTprocesses,Tprocess);
-                printf("================= Priority 1 =================");
+                printf("================= Priority 1 =================\n");
                 displayQueueTime(P1processes,Tprocess);
-                printf("================= Priority 2 =================");
+                printf("================= Priority 2 =================\n");
                 displayQueueTime(P2processes,Tprocess);
-                printf("================= Priority 3 =================");
-                displayQueueTime(P3processes,Tprocess);
-                printf("================= Finished =================");
-                displayQueueTime(Eprocesses,Tprocess);
-                
+                printf("================= Priority 3 =================\n");
+                displayQueueTime(P3processes,Tprocess);  
             }
             else if(user_choice==6){
-                printf("================= Real Time =================");
+                printf("================= Real Time =================\n");
                 displayQueue(RTprocesses);
-                printf("================= Priority 1 =================");
+                printf("================= Priority 1 =================\n");
                 displayQueue(P1processes);
-                printf("================= Priority 2 =================");
+                printf("================= Priority 2 =================\n");
                 displayQueue(P2processes);
-                printf("================= Priority 3 =================");
+                printf("================= Priority 3 =================\n");
                 displayQueue(P3processes);
-                printf("================= Finished =================");
+                printf("================= Finished =================\n");
                 displayQueue(Eprocesses);
 
             }
@@ -219,9 +282,10 @@ int main(void){
                 exit(0);
             }
         }
+        return 0;
     }
     
-    return 0;
+    
 }
 
 
@@ -255,20 +319,24 @@ void AddToEnd(ptrPCB *headRef, ptrPCB tooAddPtr){
 //function to read a line and return a pointer to a newly allocated PCB
 
 
-ptrPCB readBlock(FILE *fptr){
-    PCB *block=(ptrPCB)malloc(sizeof(PCB));
-    fscanf(fptr, "%d%d%d%d%d%d%d%d",  &block->processId,
-               &block->userId,
-               &block->arrivalTime,
-               &block->priority,
-               &block->expectedTimeRemaining,
-               &block->expectedMemoryNeed,
-               &block->expectedPctCPU,
-               &block->realTime);
-    block->processState = NEW;
-    block->nextPtr =NULL;
-    return &block;
+ptrPCB readBlock(int processId, int userId, int arrivalTime, int priority,
+                 int expectedTimeRemaining, int expectedMemoryNeed, int expectedPctCPU, int realTime) {
+    ptrPCB newPCB = malloc(sizeof(PCB));
+
+    // Populate the PCB structure with the values passed from the main function
+    newPCB->processId = processId;
+    newPCB->userId = userId;
+    newPCB->arrivalTime = arrivalTime;
+    newPCB->priority = priority;
+    newPCB->expectedTimeRemaining = expectedTimeRemaining;
+    newPCB->expectedMemoryNeed = expectedMemoryNeed;
+    newPCB->expectedPctCPU = expectedPctCPU;
+    newPCB->realTime = realTime;
+    newPCB->nextPtr = NULL;
+
+    return newPCB;
 }
+
 
 
 //function to remove from the front of the list
@@ -286,57 +354,52 @@ ptrPCB GetAndRemoveFront(ptrPCB *headRef){
 }
 
 
-void displayBlock(ptrPCB *block){
-    PCB *process = block;
-    printf("ID: %d Usr: %d St: %s Arr: %d Pri: %d Remain: %d Mem: %d Cput: %d RT: %d\n",
-        process->processId,process->userId,process->processState,process->arrivalTime,process->priority, 
+void displayBlock(ptrPCB block){
+    ptrPCB process = block;
+    printf("ID: %d Usr: %d Arr: %d Pri: %d Remain: %d Mem: %d Cput: %d RT: %d\n",
+        process->processId,process->userId,process->arrivalTime,process->priority, 
         process->expectedTimeRemaining,process->expectedMemoryNeed, process->expectedPctCPU,process->realTime);
     return;
 
 }
 
-void displayQueue(ptrPCB *headRef){
+void displayQueue(ptrPCB headRef){
     printf("---------------------- process control blocks ----------------------\n");
     if(headRef == NULL){ //if list is empty
         return;
     }
     else{
-        PCB *block = headRef;
-        while(block->nextPtr!=NULL){
+        ptrPCB block = headRef;
+        while(block!=NULL){
             displayBlock(block);
             block = block->nextPtr;
         }
     }
 }
-void displayQueueTime(ptrPCB *headRef, int pTime){
+void displayQueueTime(ptrPCB headRef, int pTime){
     int count = 0;
-    if(headRef != NULL){ //if list is empty
-        ptrPCB curr = headRef;
-        do{
-            PCB *process = curr;
-            if(process->expectedTimeRemaining>pTime){
-                displayBlock(&process);
-                count++;
-            }
-            curr = curr->nextPtr;
-
-        }while(curr->nextPtr==NULL);
-        
+    ptrPCB curr = headRef;
+    while(curr!=NULL){
+        if(curr->arrivalTime ==pTime){
+            count++;
+            displayBlock(curr);
+        }
     }
-    prinft("Number found: %d", count);
+    printf("Number found: %d \n", count);
 }
 
-void displayQueueArr(ptrPCB *headRef, int aTime){
+void displayQueueArr(ptrPCB headRef, int aTime) {
     int count = 0;
-    if(headRef !=NULL){
-        ptrPCB curr = headRef;
-        do{
-            PCB *process = curr;
-            if(process->arrivalTime==aTime){
-                count++;
-                displayBlock(&process);
-            }
-        }while(curr->nextPtr==NULL);
+    ptrPCB curr = headRef;
+    while (curr != NULL) {
+        if (curr->arrivalTime == aTime) {
+            count++;
+            displayBlock(curr);  
+        }
+        curr = curr->nextPtr;
     }
+
+    printf("Number found: %d \n", count);
 }
+
 //shift+alt+A
