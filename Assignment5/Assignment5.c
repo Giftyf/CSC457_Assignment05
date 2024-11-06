@@ -14,7 +14,8 @@
     process has arrived and, if it has, whether it is a real-time process. For non-real-time processes, 
     the priority level determines the appropriate queue. The program then provides the user with options 
     to either finish the running process or manage the process if its time is up. FIFO queues are used 
-    to implement this scheduling system.
+    to implement this scheduling system.The program also provide the option to view the queues.
+
 */
 
 typedef enum States {NEW} State;
